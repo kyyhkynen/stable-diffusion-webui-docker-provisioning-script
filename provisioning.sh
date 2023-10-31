@@ -63,6 +63,7 @@ fi
 printf "Downloading Deliberate v3...\n"
 model_file=${sd_models_dir}/deliberate_v3.safetensors
 model_url=https://huggingface.co/XpucT/Deliberate/resolve/main/Deliberate_v3.safetensors
+download ${model_url} ${model_file}
 
 printf "Downloading a few pruned controlnet models...\n"
 
