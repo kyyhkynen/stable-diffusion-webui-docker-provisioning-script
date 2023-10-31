@@ -143,5 +143,7 @@ if [[ ! -e ${model_file} ]]; then
     download ${model_url} ${model_file}
 fi
 
+export WEBUI_FLAGS='--xformers --no-half --no-half-vae --enable-insecure-extension-access --api --allow-cors-origins="*"'
+
 printf "\nProvisioning complete:  Web UI will start now\n\n"
 
