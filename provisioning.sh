@@ -2,7 +2,7 @@
 
 # This file will be sourced in init.sh
 
-# https://raw.githubusercontent.com/ai-dock/stable-diffusion-webui/main/config/provisioning/default.sh
+# forked from https://raw.githubusercontent.com/ai-dock/stable-diffusion-webui/main/config/provisioning/default.sh
 printf "\n##############################################\n#                                            #\n#          Provisioning container            #\n#                                            #\n#         This will take some time           #\n#                                            #\n# Your container will be ready on completion #\n#                                            #\n##############################################\n\n"
 
 function download() {
@@ -33,54 +33,12 @@ else
     )
 fi
 
-if [[ $XPU_TARGET != "CPU" && $WEBUI_FLAGS != *"--use-cpu all"* ]]; then
-    # Dreambooth
-    printf "Setting up Dreambooth...\n"
-    if [[ -d sd_dreambooth_extension ]]; then
-        (cd sd_dreambooth_extension && \
-            git pull && \
-            micromamba run -n webui ${PIP_INSTALL} -r requirements.txt
-        )
-    else
-        (git clone https://github.com/d8ahazard/sd_dreambooth_extension && \
-            micromamba run -n webui ${PIP_INSTALL} -r sd_dreambooth_extension/requirements.txt
-        )
-    fi
-fi
-
-# Dynamic Prompts
-printf "Setting up Dynamic Prompts...\n"
-if [[ -d sd-dynamic-prompts ]]; then
-    (cd sd-dynamic-prompts && git pull)
-else
-    git clone https://github.com/adieyal/sd-dynamic-prompts.git
-    micromamba run -n webui ${PIP_INSTALL} -U \
-        dynamicprompts[attentiongrabber,magicprompt]~=0.29.0 \
-        send2trash~=1.8
-fi
-
-# Face Editor
-printf "Setting up Face Editor...\n"
-if [[ -d sd-face-editor ]]; then
-    (cd sd-face-editor && git pull)
-else
-    git clone https://github.com/ototadana/sd-face-editor.git
-fi
-
 # Image Browser
 printf "Setting up Image Browser...\n"
 if [[ -d stable-diffusion-webui-images-browser ]]; then
     (cd stable-diffusion-webui-images-browser && git pull)
 else
     git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser
-fi
-
-# Regional Prompter
-printf "Setting up Regional Prompter...\n"
-if [[ -d sd-webui-regional-prompter ]]; then
-    (cd sd-webui-regional-prompter && git pull)
-else
-    git clone https://github.com/hako-mikan/sd-webui-regional-prompter.git
 fi
 
 # Ultimate Upscale
@@ -91,46 +49,21 @@ else
     git clone https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
 fi
 
-# v1-5-pruned-emaonly
-model_file=${sd_models_dir}/_v1-5-pruned-emaonly.ckpt
-model_url=https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
-
-if [[ ! -e ${model_file} ]]; then
-    printf "Downloading Stable Diffusion 1.5...\n"
-    download ${model_url} ${model_file}
-fi
-
-if [[ $disk_space -ge 25000 ]]; then
-    # v2-1_768-ema-pruned
-    model_file=${sd_models_dir}/v2-1_768-ema-pruned.ckpt
-    model_url=https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-ema-pruned.ckpt
-    
-    if [[ ! -e ${model_file} ]]; then
-        printf "Downloading Stable Diffusion 2.1...\n"
-        download ${model_url} ${model_file}
-    fi
-    
-    
-    # sd_xl_base_1
-    model_file=${sd_models_dir}/sd_xl_base_1.0.safetensors
-    model_url=https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
-    
-    if [[ ! -e ${model_file} ]]; then
-        printf "Downloading Stable Diffusion XL base...\n"
-        download ${model_url} ${model_file} 
-    fi
-    
-    # sd_xl_refiner_1
-    model_file=${sd_models_dir}/sd_xl_refiner_1.0.safetensors
-    model_url=https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors
-    
-    if [[ ! -e ${model_file} ]]; then
-        printf "Downloading Stable Diffusion XL refiner...\n"
-        download ${model_url} ${model_file}
-    fi
+# Clip Interrogator
+printf "Setting up Clip Interrogator...\n"
+if [[ -d clip-interrogator-ext ]]; then
+    (cd clip-interrogator-ext && git pull && \
+            micromamba run -n webui ${PIP_INSTALL} clip-interrogator==0.6.0)
 else
-        printf "\nSkipping extra models (disk < 30GB)\n"
+    git clone https://github.com/pharmapsychotic/clip-interrogator-ext
+    micromamba run -n webui ${PIP_INSTALL} clip-interrogator==0.6.0
 fi
+
+# deliberate_v3
+printf "Downloading Deliberate v3...\n"
+model_file=${sd_models_dir}/deliberate_v3.safetensors
+model_url=https://huggingface.co/XpucT/Deliberate/resolve/main/Deliberate_v3.safetensors
+
 printf "Downloading a few pruned controlnet models...\n"
 
 model_file=${cn_models_dir}/control_canny-fp16.safetensors
@@ -141,19 +74,19 @@ if [[ ! -e ${model_file} ]]; then
     download ${model_url} ${model_file}
 fi
 
-model_file=${cn_models_dir}/control_depth-fp16.safetensors
-model_url=https://huggingface.co/webui/ControlNet-modules-safetensors/resolve/main/control_depth-fp16.safetensors
+model_file=${cn_models_dir}/control_v11p_sd15_lineart.pth
+model_url=https://huggingface.co/lllyasviel/ControlNet-v1-1/resolve/main/control_v11p_sd15_lineart.pth
 
 if [[ ! -e ${model_file} ]]; then
-    printf "Downloading Depth...\n"
+    printf "Downloading Lineart...\n"
     download ${model_url} ${model_file}
 fi
 
-model_file=${cn_models_dir}/control_openpose-fp16.safetensors
-model_url=https://huggingface.co/webui/ControlNet-modules-safetensors/resolve/main/control_openpose-fp16.safetensors
+model_file=${cn_models_dir}/annotator/downloads/lineart/sk_model.pth
+model_url=https://huggingface.co/lllyasviel/Annotators/resolve/main/sk_model.pth
 
 if [[ ! -e ${model_file} ]]; then
-    printf "Downloading Openpose...\n"
+    printf "Downloading Lineart annotator...\n"
     download ${model_url} ${model_file}
 fi
 
@@ -180,14 +113,6 @@ model_url=https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main
 
 if [[ ! -e ${model_file} ]]; then
     printf "Downloading vae-ft-mse-840000-ema...\n"
-    download ${model_url} ${model_file}
-fi
-
-model_file=${vae_models_dir}/sdxl_vae.safetensors
-model_url=https://huggingface.co/stabilityai/sdxl-vae/resolve/main/sdxl_vae.safetensors
-
-if [[ ! -e ${model_file} ]]; then
-    printf "Downloading sdxl_vae...\n"
     download ${model_url} ${model_file}
 fi
 
